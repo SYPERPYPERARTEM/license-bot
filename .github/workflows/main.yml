@@ -1,0 +1,24 @@
+name: Get Unity ULF License
+
+on:
+  workflow_dispatch:
+
+jobs:
+  get_license:
+    name: Fetch ULF License File
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Activate and Get ULF
+        uses: game-ci/unity-activate@v2
+        with:
+          username: ${{ secrets.UNITY_EMAIL }}
+          password: ${{ secrets.UNITY_PASSWORD }}
+
+      - name: Upload ULF File
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unity_ULF_License
+          path: ./*.ulf
