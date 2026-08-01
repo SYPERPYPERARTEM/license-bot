@@ -8,13 +8,14 @@ jobs:
     name: Request manual activation file
     runs-on: ubuntu-latest
     steps:
+      # Робот скачивает ваш реальный репозиторий с созданной папкой ProjectSettings
       - uses: actions/checkout@v4
 
+      # Теперь он сканирует корень, находит ProjectVersion.txt и понимает версию
       - name: Request manual activation file
         uses: game-ci/unity-request-activation-file@v3
-        with:
-          unityVersion: 2022.3.20f1
 
+      # Выкладывает готовый файл запроса лицензии
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
