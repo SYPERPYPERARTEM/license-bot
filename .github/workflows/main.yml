@@ -5,17 +5,48 @@ on:
 
 jobs:
   activation:
-    name: Request manual activation file
-    runs-on: ubuntu-latest
+    name: Execute Windows Installer and Auth
+    runs-on: windows-latest # Запускаем бота на полноценном Windows-сервере x86_64
     steps:
-      # Робот скачивает ваш реальный репозиторий с созданной папкой ProjectSettings
-      - uses: actions/checkout@v4
+      # Шаг 1: Бот скачивает ваш репозиторий с папкой ProjectSettings
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'SYPERPYPERARTEM/license-bot'
+          ref: 'main'
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Теперь он сканирует корень, находит ProjectVersion.txt и понимает версию
-      - name: Request manual activation file
-        uses: game-ci/unity-request-activation-file@v3
+      # Шаг 2: Скачивание Unity Hub для Windows по прямой ссылке
+      - name: Download Unity Hub Windows Installer
+        run: |
+          echo "Downloading official UnityHubSetup.exe..."
+          Invoke-WebRequest -Uri "https://unity3d.com" -OutFile "UnityHubSetup.exe"
 
-      # Выкладывает готовый файл запроса лицензии
+      # Шаг 3: Тихая установка Unity Hub в систему Windows (флаг /S означает Silent)
+      - name: Install Unity Hub Silently
+        run: |
+          echo "Installing Unity Hub on Windows Server..."
+          Start-Process -FilePath ".\UnityHubSetup.exe" -ArgumentList "/S" -Wait
+
+      # Шаг 4: Авторизация через секреты и генерация файла .alf в английском режиме командной строки
+      - name: Command Hub to Login and Create ALF
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          echo "Setting up English environment variables..."
+          $env:Path += ";C:\Program Files\Unity Hub"
+          
+          echo "Logging into login.unity.com..."
+          unity-hub.exe --headless login --username "$env:UNITY_EMAIL" --password "$env:UNITY_PASSWORD"
+          
+          echo "Generating Manual Activation File (.alf)..."
+          unity-hub.exe --headless create-manual-activation-file
+          
+          # Перемещаем созданный файл в корень для отправки
+          Move-Item -Path "$env:USERPROFILE\.local\share\unity3d\*.alf" -Destination ".\Unity_License.alf" -ErrorAction SilentlyContinue
+
+      # Шаг 5: Выгружаем готовый .alf файл для скачивания на ваш телефон
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
